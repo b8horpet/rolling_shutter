@@ -13,7 +13,7 @@ def extract_frames(vid,folder):
         j=cpu_count()
     except:
         pass
-    ff=ffmpy.FFmpeg(inputs={str(vid):None},outputs={str(folder)+'/frame%05d.png':'-loglevel panic -threads '+str(j)})
+    ff=ffmpy.FFmpeg(inputs={str(vid):None},outputs={str(folder)+'/frame%05d.png':'-loglevel panic -y -threads '+str(j)})
     print(ff.cmd)
     ff.run()
 
@@ -24,7 +24,7 @@ def compose_vid(folder,vid):
         j=cpu_count()
     except:
         pass
-    ff=ffmpy.FFmpeg(inputs={str(folder)+'/frame%05d.png':None},outputs={str(vid):'-loglevel panic -threads '+str(j)})
+    ff=ffmpy.FFmpeg(inputs={str(folder)+'/frame%05d.png':None},outputs={str(vid):'-loglevel panic -y -threads '+str(j)})
     print(ff.cmd)
     ff.run()
     print('output video ' + str(vid) + ' written')
@@ -42,10 +42,11 @@ def rs(in_folder,out_folder,speed=1):
     beg=1
     end=height//speed
 
-    frames=[Image.open(str(in_folder)+('/frame%05d.png' % i)) for i in range(beg,end+1)]
+    frames=[Image.open(str(in_folder)+('/frame%05d.png' % i)) for i in range(beg,end)]
     
     while(end<=count):
         print("%d frames to go" % (count-end))
+        frames.append(Image.open(str(in_folder)+('/frame%05d.png' % end)))
         # Making our blank output frame
         output_image = Image.new('RGB', (width, height)) 
         
@@ -65,7 +66,6 @@ def rs(in_folder,out_folder,speed=1):
         end+=1
         frames[0].close()
         frames.pop(0)
-        frames.append(Image.open(str(in_folder)+('/frame%05d.png' % end)))
 
     for i in frames:
         i.close()
