@@ -4,15 +4,28 @@ import ffmpy
 import sys
 import tempfile
 import shutil
+from multiprocessing import cpu_count
 
 def extract_frames(vid,folder):
     print('extracting frames')
-    ff=ffmpy.FFmpeg(inputs={str(vid):None},outputs={str(folder)+'/frame%05d.png':'-loglevel panic'})
+    j=1
+    try:
+        j=cpu_count()
+    except:
+        pass
+    ff=ffmpy.FFmpeg(inputs={str(vid):None},outputs={str(folder)+'/frame%05d.png':'-loglevel panic -threads '+str(j)})
+    print(ff.cmd)
     ff.run()
 
 def compose_vid(folder,vid):
     print('composing video')
-    ff=ffmpy.FFmpeg(inputs={str(folder)+'/frame%05d.png':None},outputs={str(vid):'-loglevel panic'})
+    j=1
+    try:
+        j=cpu_count()
+    except:
+        pass
+    ff=ffmpy.FFmpeg(inputs={str(folder)+'/frame%05d.png':None},outputs={str(vid):'-loglevel panic -threads '+str(j)})
+    print(ff.cmd)
     ff.run()
     print('output video ' + str(vid) + ' written')
 
@@ -32,6 +45,7 @@ def rs(in_folder,out_folder,speed=1):
     frames=[Image.open(str(in_folder)+('/frame%05d.png' % i)) for i in range(beg,end+1)]
     
     while(end<=count):
+        print("%d frames to go" % (count-end))
         # Making our blank output frame
         output_image = Image.new('RGB', (width, height)) 
         
@@ -52,8 +66,10 @@ def rs(in_folder,out_folder,speed=1):
         frames[0].close()
         frames.pop(0)
         frames.append(Image.open(str(in_folder)+('/frame%05d.png' % end)))
-        
-    
+
+    for i in frames:
+        i.close()
+
 
 if __name__ == "__main__":
     if len(sys.argv)<2:
@@ -72,11 +88,13 @@ if __name__ == "__main__":
     except:
         print('extraction failed')
         count=len(glob.glob(str(tmp_in)+'/frame?????.png'))
-        print('only %d  got frames' % count)
+        print('only got %d frames' % count)
     try:
         rs(tmp_in,tmp_out,1)
     except:
         print('shutter effect failed')
+        count=len(glob.glob(str(tmp_out)+'/frame?????.png'))
+        print('only got %d frames' % count)
     try:
         compose_vid(tmp_out,vid_out)
     except:
